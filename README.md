@@ -1,1 +1,1 @@
-# MySqlSchoolServer
+# SchoolServer
