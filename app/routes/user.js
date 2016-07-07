@@ -15,46 +15,25 @@ module.exports = function (app) {
      * Login
      */
     app.post('/api/login', function (req, res) {
-        req.models.user.one({username: req.body.username}, function (err, user) {
+        req.models.user.one({username: req.body.username}, {autoFetchLimit: 2}, function (err, user) {
             if (err || !user) {
                 res.status(404).send({message: 'User not found'});
             } else if (user.checkPassword(req.body.password)) {
                 req.headerSession.getSession()
                     .then(function (session) {
                         session['user'] = user;
-                        req.models.role.get(user.role, function (err, role) {
-                            if (err || !role) {
-                                res.status(404).send({message: 'Role not found'});
-                            } else {
-                                res.status(200).json({
-                                    currentUser: user,
-                                    sessionID: req.headerSession.token
-                                });
-                            }
+                        session['user'].role.permissions = _.map(user.role.permissions, function (permission) {
+                            return permission.id;
+                        });
+                        res.status(200).json({
+                            currentUser: user,
+                            sessionID: req.headerSession.token
                         });
                     })
             } else {
                 res.status(404).send({message: 'User not found'});
             }
         });
-        // User.findOne({username: req.body.username})
-        //     .populate('roles')
-        //     .exec(function (err, user) {
-        //         if (err || !user) {
-        //             res.status(404).send({message: 'User not found'});
-        //         } else if (user.checkPassword(req.body.password)) {
-        //             req.headerSession.getSession()
-        //                 .then(function (session) {
-        //                     session['user'] = user;
-        //                     res.status(200).json({
-        //                         currentUser: user.getValues(),
-        //                         sessionID: req.headerSession.token
-        //                     });
-        //                 })
-        //         } else {
-        //             res.status(404).send({message: 'User not found'});
-        //         }
-        //     });
     });
 
     /**
@@ -107,18 +86,15 @@ module.exports = function (app) {
      * Read
      */
     // List
-    app.get('/api/users', function (request, response) {
-        User.find(function (err, users) {
+    app.get('/api/users', function (req, res) {
+        req.models.user.find({}, {autoFetchLimit: 2}, function (err, users) {
             if (err || !users) {
-                response.status(500).send({message: err || 'Users not found'});
+                res.status(500).send({message: err || 'Users not found'});
             } else {
-                var result = _.map(users, function (user) {
-                    return user.getValues();
-                });
-                if (request.query.limit && request.query.offset) {
-                    response.status(200).json(result.splice(Number(request.query.offset), Number(request.query.limit)))
+                if (req.query.limit && req.query.offset) {
+                    res.status(200).json(users.splice(Number(req.query.offset), Number(req.query.limit)));
                 } else {
-                    response.status(200).json(result);
+                    res.status(200).json(users);
                 }
             }
         });

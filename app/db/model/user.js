@@ -1,8 +1,7 @@
 /**
  * Created by trainee on 6/7/16.
  */
-var crypto = require('crypto'),
-    Role = require('./role');
+var crypto = require('crypto');
 
 module.exports = function (db) {
     var User = db.define('user', {
@@ -33,7 +32,7 @@ module.exports = function (db) {
             type: 'text',
             required: true
         },
-        role: Number,
+        role_id: Number,
         created: Date
     }, {
         methods: {
@@ -62,6 +61,9 @@ module.exports = function (db) {
                 return this._plainPassword;
             }
         }
+    });
+    User.hasOne('role', require('./role')(db), {
+        autoFetch: true
     });
     return User;
 };

@@ -38,8 +38,8 @@ module.exports = function (app) {
      * Read
      */
     app.get('/api/subjects', function (req, res) {
-        Subject.find(function (err, subjects) {
-            checkOnError(res, err, subjects, function () {
+        req.models.subject.all({}, {autoFetchLimit: 2}, function (err, subjects) {
+            checkOnError(req, err, subjects, function () {
                 res.status(200).json(subjects);
             });
         });
@@ -53,30 +53,11 @@ module.exports = function (app) {
         })
     });
     app.get('/api/subject/teacher/:id', function (req, res) {
-        Teacher.find({"user": req.params.id}, function (err, teacher) {
-            if (teacher[0] && !err && req) {
-                Subject.find(function (err, subjects) {
-                    if (subjects && !err) {
-                        var resBody = [];
-                        _.each(teacher[0].subjects, function (sub) {
-                            _.every(subjects, function (subject) {
-                                if (sub.id == subject._id.id) {
-                                    resBody.push(subject);
-                                    return false;
-                                }
-                                return true;
-                            });
-                        });
-                        res.status(200).send(resBody);
-                    } else {
-                        res.status(err ? err.code : 404).send({message: err || 'Subjects not found'});
-                    }
-
-                });
-            } else {
-                res.status(!err ? 200 : 404).send({message: err || 'Teacher not found'});
-            }
-        })
+        req.models.teacher.find({'user_id': req.params.id}, {autoFetchLimit: 3}, function (err, teachers) {
+            checkOnError(req, err, teachers, function () {
+                res.status(200).json(teachers);
+            });
+        });
     });
 
     /**

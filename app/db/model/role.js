@@ -8,6 +8,14 @@ module.exports = function (db) {
         weight: Number,
         description: {type: 'text'}
     }, {});
+    var Permission = db.define('permission', {
+        id: {type: Number, index: true},
+        description: {type: 'text'}
+    });
+    Role.hasMany('permissions', Permission, {}, {
+        autoFetch: true,
+        autoFetchLimit: 2
+    });
 
     return Role;
 };

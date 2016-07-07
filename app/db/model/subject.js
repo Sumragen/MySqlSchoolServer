@@ -7,5 +7,11 @@ module.exports = function (db) {
         name: {type: 'text'},
         classroom: Number
     }, {});
+    Subject.hasMany('teacher', db.models.teacher, {}, {
+        autoFetch: true,
+        // autoFetchLimit: 2,
+        reverse: 'subject',
+        key: true,
+    });
     return Subject;
 };

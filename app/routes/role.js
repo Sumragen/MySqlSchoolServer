@@ -38,7 +38,7 @@ module.exports = function (app) {
      * Read
      */
     app.get('/api/roles', function (req, res) {
-        Role.find(function (err, roles) {
+        req.models.role.find({}, {autoFetchLimit: 2}, function (err, roles) {
             checkOnError(res, err, roles, function () {
                 res.status(200).json(roles);
             });
@@ -46,11 +46,11 @@ module.exports = function (app) {
     });
 
     app.get('/api/role/:id', function (req, res) {
-        Role.findById(req.params.id, function (err, role) {
+        req.models.role.get(Number(req.params.id),{autoFetchLimit: 1}, function (err, role) {
             checkOnError(res, err, role, function () {
                 res.status(200).json(role);
             });
-        })
+        });
     });
 
     /**

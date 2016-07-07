@@ -11,8 +11,8 @@ module.exports = function (app) {
             models.lesson = require('./model/lesson')(db);
             models.role = require('./model/role')(db);
             models.stage = require('./model/stage')(db);
-            models.subject = require('./model/subject')(db);
             models.teacher = require('./model/teacher')(db);
+            models.subject = require('./model/subject')(db);
             models.user = require('./model/user')(db);
             log.info('MySql database connected.');
             next();
