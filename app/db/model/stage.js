@@ -6,7 +6,10 @@ module.exports = function (db) {
         id: {type: Number, index: true},
         stage: Number,
         suffix: {type: 'text'},
-        formMaster: Number
+        formMaster_id : Number
     }, {});
+    Stage.hasOne('formMaster', db.models.teacher, {}, {
+        autoFetch: true
+    });
     return Stage;
 };

@@ -53,9 +53,9 @@ module.exports = function (app) {
         })
     });
     app.get('/api/subject/teacher/:id', function (req, res) {
-        req.models.teacher.find({'user_id': req.params.id}, {autoFetchLimit: 3}, function (err, teachers) {
-            checkOnError(req, err, teachers, function () {
-                res.status(200).json(teachers);
+        req.models.teacher.find({user_id: req.params.id}, {autoFetchLimit: 3}, function (err, teachers) {
+            checkOnError(req, err, {}, function () {
+                res.status(200).json(teachers[0] ? teachers[0].subject : null);
             });
         });
     });
