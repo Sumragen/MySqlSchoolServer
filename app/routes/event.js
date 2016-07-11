@@ -22,90 +22,89 @@ module.exports = function (app) {
      * Create
      */
     app.post('/api/event/add', function (req, res) {
-        req.body.date = new Date(req.body.date);
-        var event = new Event(req.body);
-        event.save(function (err) {
+        if (!req.body.address) {
+            req.body.address = 'default address';
+        }
+        var event = _.clone(req.body);
+        event.date = new Date(event.date);
+        event.location = event.location ? event.location.latitude + ';' + event.location.longitude : ';';
+        req.models.event.create(event, function (err, newEvent) {
             if (err) {
-                res.send({message: err});
+                res.status(500).send({message: err});
             } else {
-                res.status(200).json(event);
+                res.status(200).send(newEvent.getValue());
             }
-        })
+        });
     });
 
     /**
      * Read
      */
     app.get('/api/events', function (req, res) {
-        req.models.events.find(null, function (err, events) {
+        req.models.event.find(null, function (err, events) {
             checkOnError(res, err, events, function () {
-                res.status(200).json(events);
+                var respBody = [];
+                _.each(events, function (event) {
+                    respBody.push(event.getValue());
+                });
+                res.status(200).json(respBody);
             })
         });
-        // Event.find(function (err, events) {
-        //     checkOnError(res, err, events, function () {
-        //         res.status(200).json(events);
-        //     });
-        // });
     });
 
     app.get('/api/event/:id', function (req, res) {
-        Event.findById(req.params.id, function (err, event) {
+        req.models.event.get(req.params.id, function (err, event) {
             checkOnError(res, err, event, function () {
                 res.status(200).json(event);
-            });
-        })
+            })
+        });
     });
 
     /**
      * Update
      */
     app.put('/api/event/:id', function (req, res) {
-        Event.findById(req.params.id)
-            .exec(function (err, event) {
-                checkOnError(res, err, event, function () {
-                    event.date = new Date(req.body.date);
-                    event.description = req.body.description;
-                    event.name = req.body.name;
-                    event.save(function (err) {
-                        if (err) {
-                            res.status(err.code).send({message: err});
-                        } else {
-                            res.status(200).send(event);
-                        }
-                    })
+        req.models.event.get(req.params.id, function (err, event) {
+            checkOnError(res, err, event, function () {
+                event.date = new Date(req.body.date);
+                event.description = req.body.description;
+                event.name = req.body.name;
+                event.save(function (err) {
+                    checkOnError(res, err, event, function () {
+                        res.status(200).send(event);
+                    });
                 });
             });
+        });
     });
     app.put('/api/events', function (req, res) {
-        Event.remove({}, function (err) {
-            if (err) {
-                res.status(500).send({message: err});
-            } else {
-                Event.collection.insert(req.body, function (err, events) {
-                    if (err) {
-                        res.status(err.code).send({message: err});
-                    } else {
-                        res.status(200).send(events);
-                    }
-                });
-            }
+        req.models.event.clear(function (err) {
+            checkOnError(res, err, {}, function () {
+                _.each(req.body, function (event) {
+                    event.date = new Date(event.date);
+                    event.address = event.address || 'default address';
+                    event.location = event.location.latitude + ';' + event.location.longitude;
+                    req.models.event.create(event, function (err) {
+                        if (err) {
+                            res.status(500).send({message: err});
+                        }else{
+                            res.status(200).send();
+                        }
+                    });
+                })
+            });
         });
     });
     /**
      * Delete
      */
     app.delete('/api/event/:id', function (req, res) {
-        Event.findById(req.params.id, function (err, event) {
-            checkOnError(res, err, event, function () {
-                event.remove(function (err) {
-                    if (err) {
-                        res.status(err.code).send({message: err});
-                    } else {
-                        res.status(200).send(event);
-                    }
-                })
-            });
+        req.models.event.find({id: req.params.id}).remove(function (err) {
+            if (err) {
+                res.status(500).send({message: err});
+            } else {
+                res.status(200).send({id: req.params.id});
+            }
         });
     })
 };

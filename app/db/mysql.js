@@ -12,7 +12,7 @@ module.exports = function (app) {
             models.teacher = require('./model/teacher')(db);
             models.subject = require('./model/subject')(db);
             models.stage = require('./model/stage')(db);
-            models.events = require('./model/event')(db);
+            models.event = require('./model/event')(db);
             models.lesson = require('./model/lesson')(db);
             log.info('MySql database connected.');
             next();

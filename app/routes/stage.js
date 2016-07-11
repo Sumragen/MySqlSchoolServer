@@ -73,25 +73,36 @@ module.exports = function (app) {
     }
 
     app.get('/api/stages', function (req, res) {
-        Stage.find()
-            .populate('formMaster')
-            .exec(function (err, stages) {
-                var options = {
-                    path: 'formMaster.user',
-                    model: 'User'
-                };
-                if (err) {
-                    res.status(500).send({message: err});
-                } else {
-                    Stage.populate(stages, options, function (err, stages) {
-                        var responseBody = [];
-                        _.each(stages, function (stage) {
-                            responseBody.push(createResponseBody(stage))
-                        });
-                        res.status(200).send(responseBody);
-                    });
-                }
-            })
+        req.models.stage.find({}, {autoFetchLimit: 2}, function (err, stages) {
+            if (err) {
+                res.status(500).send({message: err});
+            } else {
+                var responseBody = [];
+                _.each(stages, function (stage) {
+                    responseBody.push(createResponseBody(stage))
+                });
+                res.status(200).send(responseBody);
+            }
+        });
+        // Stage.find()
+        //     .populate('formMaster')
+        //     .exec(function (err, stages) {
+        //         var options = {
+        //             path: 'formMaster.user',
+        //             model: 'User'
+        //         };
+        //         if (err) {
+        //             res.status(500).send({message: err});
+        //         } else {
+        //             Stage.populate(stages, options, function (err, stages) {
+        //                 var responseBody = [];
+        //                 _.each(stages, function (stage) {
+        //                     responseBody.push(createResponseBody(stage))
+        //                 });
+        //                 res.status(200).send(responseBody);
+        //             });
+        //         }
+        //     })
     });
 
     app.get('/api/stage/:id', function (req, res) {
