@@ -30,14 +30,6 @@ module.exports = function (app) {
                 res.status(200).json(newRole);
             }
         });
-        // var role = new Role(req.body);
-        // role.save(function (err) {
-        //     if (err) {
-        //         res.send({message: err});
-        //     } else {
-        //         res.status(200).json(role);
-        //     }
-        // })
     });
 
     /**
@@ -78,21 +70,6 @@ module.exports = function (app) {
                 })
             })
         });
-        // Role.findById(req.params.id, function (err, role) {
-        //     checkOnError(res, err, role, function () {
-        //         role.description = req.body.description;
-        //         role.name = req.body.name;
-        //         role.permissions = req.body.permissions;
-        //         role.weight = req.body.weight;
-        //         role.save(function (err) {
-        //             if (err) {
-        //                 res.status(err.code).send({message: err});
-        //             } else {
-        //                 res.status(200).send(role);
-        //             }
-        //         })
-        //     });
-        // })
     });
     /**
      * Delete
@@ -103,16 +80,5 @@ module.exports = function (app) {
                 res.status(200).send({id: req.params.id});
             })
         });
-        // Role.findById(req.params.id, function (err, role) {
-        //     checkOnError(res, err, role, function () {
-        //         role.remove(function (err) {
-        //             if (err) {
-        //                 res.status(err.code).send({message: err});
-        //             } else {
-        //                 res.status(200).send({message: 'Role deleted'});
-        //             }
-        //         })
-        //     });
-        // });
     })
 };
