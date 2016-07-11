@@ -23,15 +23,21 @@ module.exports = function (app) {
      * Create
      */
     app.post('/api/role/add', function (req, res) {
-        mysql.query('')
-        var role = new Role(req.body);
-        role.save(function (err) {
+        req.models.role.create(req.body, function (err, newRole) {
             if (err) {
-                res.send({message: err});
+                res.send(err);
             } else {
-                res.status(200).json(role);
+                res.status(200).json(newRole);
             }
-        })
+        });
+        // var role = new Role(req.body);
+        // role.save(function (err) {
+        //     if (err) {
+        //         res.send({message: err});
+        //     } else {
+        //         res.status(200).json(role);
+        //     }
+        // })
     });
 
     /**
@@ -46,7 +52,7 @@ module.exports = function (app) {
     });
 
     app.get('/api/role/:id', function (req, res) {
-        req.models.role.get(Number(req.params.id),{autoFetchLimit: 1}, function (err, role) {
+        req.models.role.get(req.params.id, {autoFetchLimit: 1}, function (err, role) {
             checkOnError(res, err, role, function () {
                 res.status(200).json(role);
             });
@@ -57,7 +63,7 @@ module.exports = function (app) {
      * Update
      */
     app.put('/api/role/:id', function (req, res) {
-        Role.findById(req.params.id, function (err, role) {
+        req.models.role.get(req.params.id, function (err, role) {
             checkOnError(res, err, role, function () {
                 role.description = req.body.description;
                 role.name = req.body.name;
@@ -70,23 +76,43 @@ module.exports = function (app) {
                         res.status(200).send(role);
                     }
                 })
-            });
-        })
+            })
+        });
+        // Role.findById(req.params.id, function (err, role) {
+        //     checkOnError(res, err, role, function () {
+        //         role.description = req.body.description;
+        //         role.name = req.body.name;
+        //         role.permissions = req.body.permissions;
+        //         role.weight = req.body.weight;
+        //         role.save(function (err) {
+        //             if (err) {
+        //                 res.status(err.code).send({message: err});
+        //             } else {
+        //                 res.status(200).send(role);
+        //             }
+        //         })
+        //     });
+        // })
     });
     /**
      * Delete
      */
     app.delete('/api/role/:id', function (req, res) {
-        Role.findById(req.params.id, function (err, role) {
-            checkOnError(res, err, role, function () {
-                role.remove(function (err) {
-                    if (err) {
-                        res.status(err.code).send({message: err});
-                    } else {
-                        res.status(200).send({message: 'Role deleted'});
-                    }
-                })
-            });
+        req.models.role.find({id: req.params.id}).remove(function (err) {
+            checkOnError(res, err, {}, function () {
+                res.status(200).send({id: req.params.id});
+            })
         });
+        // Role.findById(req.params.id, function (err, role) {
+        //     checkOnError(res, err, role, function () {
+        //         role.remove(function (err) {
+        //             if (err) {
+        //                 res.status(err.code).send({message: err});
+        //             } else {
+        //                 res.status(200).send({message: 'Role deleted'});
+        //             }
+        //         })
+        //     });
+        // });
     })
 };

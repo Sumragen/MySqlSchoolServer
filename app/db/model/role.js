@@ -13,8 +13,7 @@ module.exports = function (db) {
         description: {type: 'text'}
     });
     Role.hasMany('permissions', Permission, {}, {
-        autoFetch: true,
-        autoFetchLimit: 2
+        autoFetch: true
     });
 
     return Role;
