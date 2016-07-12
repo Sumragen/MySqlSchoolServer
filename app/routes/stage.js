@@ -24,37 +24,20 @@ module.exports = function (app) {
      * Create
      */
     app.post('/api/stage/add', function (req, res) {
-        var newStage = new Stage(req.body);
-        Stage.find()
-            .exec(function (err, stages) {
-                checkOnError(res, err, stages, function () {
-                    if (_.every(stages, function (stage) {
-                            return !(stage.stage == newStage.stage && stage.suffix == newStage.suffix)
-                        })) {
-                        newStage.save(function (err) {
-                            if (err) {
-                                res.send({message: err});
-                            } else {
-                                Stage.populate(newStage, {path: 'formMaster'}, function (err, newStage) {
-                                    var options = {
-                                        path: 'formMaster.user',
-                                        model: 'User'
-                                    };
-                                    if (err) {
-                                        res.status(500).send({message: err});
-                                    } else {
-                                        Stage.populate(newStage, options, function (err, newStage) {
-                                            res.status(200).send(createResponseBody(newStage));
-                                        });
-                                    }
-                                });
-                            }
-                        })
-                    } else {
-                        res.status(400).send({message: 'That stage already exist'});
-                    }
+        var stage = {
+            stage: req.body.stage,
+            suffix: req.body.suffix,
+            formmaster_id: req.body.formMaster
+        };
+        req.models.stage.create(stage, function (err, newStage) {
+            checkOnError(res, err, newStage, function () {
+                req.models.stage.get(newStage.id, {autoFetchLimit: 3}, function (err, stage) {
+                    checkOnError(res, err, stage, function () {
+                        res.status(200).send(createResponseBody(stage));
+                    })
                 });
-            });
+            })
+        });
     });
 
     /**
@@ -63,12 +46,12 @@ module.exports = function (app) {
     function createResponseBody(stage) {
         return {
             formMaster: {
-                id: stage.formMaster._id,
+                id: stage.formMaster.id,
                 name: stage.formMaster.user.first_name + ' ' + stage.formMaster.user.last_name
             },
             stage: stage.stage,
             suffix: stage.suffix,
-            _id: stage._id
+            id: stage.id
         }
     }
 
@@ -84,66 +67,30 @@ module.exports = function (app) {
                 res.status(200).send(responseBody);
             }
         });
-        // Stage.find()
-        //     .populate('formMaster')
-        //     .exec(function (err, stages) {
-        //         var options = {
-        //             path: 'formMaster.user',
-        //             model: 'User'
-        //         };
-        //         if (err) {
-        //             res.status(500).send({message: err});
-        //         } else {
-        //             Stage.populate(stages, options, function (err, stages) {
-        //                 var responseBody = [];
-        //                 _.each(stages, function (stage) {
-        //                     responseBody.push(createResponseBody(stage))
-        //                 });
-        //                 res.status(200).send(responseBody);
-        //             });
-        //         }
-        //     })
     });
 
     app.get('/api/stage/:id', function (req, res) {
-        Stage.findById(req.params.id, function (err, stage) {
-            checkOnError(res, err, stage, function () {
+        req.models.stage.get(req.params.id, {autoFetchLimit: 3}, function (err, stage) {
+            checkOnError(req, err, stage, function () {
                 res.status(200).json(stage);
-            });
-        })
+            })
+        });
     });
 
     /**
      * Update
      */
     app.put('/api/stage/:id', function (req, res) {
-        Stage.findById(req.params.id)
-            .exec(function (err, stage) {
-                stage.formMaster = req.body.formMaster;
-                var options = {
-                    path: 'formMaster',
-                    model: 'Teacher'
-                };
-                Stage.populate(stage, options, function (err, stage) {
-                    var options = {
-                        path: 'formMaster.user',
-                        model: 'User'
-                    };
-                    Stage.populate(stage, options, function (err, stage) {
-                        if (err) {
-                            res.status(500).send({message: err});
-                        } else {
-                            stage.save(function (err) {
-                                if (err) {
-                                    res.status(500);
-                                } else {
-                                    res.status(200).send(createResponseBody(stage));
-                                }
-                            });
-                        }
-                    });
-                });
+        req.models.stage.get(req.params.id, function (err, stage) {
+            stage.stage = req.body.stage;
+            stage.suffix = req.body.suffix;
+            stage.formMaster_id = req.body.formMaster;
+            stage.save(function (err, newStage) {
+                checkOnError(res, err, newStage, function () {
+                    res.status(200).send(createResponseBody(newStage));
+                })
             });
+        });
     });
     /**
      * Delete
