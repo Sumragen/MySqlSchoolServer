@@ -3,18 +3,8 @@
  */
 var _ = require('lodash'),
     libs = process.cwd() + '/app/',
-    Event = require(libs + 'db/model/event'),
+    util = require(libs+ 'common/util'),
     log = require(libs + 'log');
-
-function checkOnError(res, err, item, next) {
-    if (err) {
-        res.status(err.code).send({message: err});
-    } else if (!item) {
-        res.status(404).send({message: 'Not found!'});
-    } else {
-        next();
-    }
-}
 
 module.exports = function (app) {
     //CRUD
@@ -42,7 +32,7 @@ module.exports = function (app) {
      */
     app.get('/api/events', function (req, res) {
         req.models.event.find(null, function (err, events) {
-            checkOnError(res, err, events, function () {
+            util.checkOnErrors(res, err, events, function () {
                 var respBody = [];
                 _.each(events, function (event) {
                     respBody.push(event.getValue());
@@ -54,7 +44,7 @@ module.exports = function (app) {
 
     app.get('/api/event/:id', function (req, res) {
         req.models.event.get(req.params.id, function (err, event) {
-            checkOnError(res, err, event, function () {
+            util.checkOnErrors(res, err, event, function () {
                 res.status(200).json(event);
             })
         });
@@ -65,12 +55,12 @@ module.exports = function (app) {
      */
     app.put('/api/event/:id', function (req, res) {
         req.models.event.get(req.params.id, function (err, event) {
-            checkOnError(res, err, event, function () {
+            util.checkOnErrors(res, err, event, function () {
                 event.date = new Date(req.body.date);
                 event.description = req.body.description;
                 event.name = req.body.name;
                 event.save(function (err) {
-                    checkOnError(res, err, event, function () {
+                    util.checkOnErrors(res, err, event, function () {
                         res.status(200).send(event);
                     });
                 });
@@ -79,7 +69,7 @@ module.exports = function (app) {
     });
     app.put('/api/events', function (req, res) {
         req.models.event.clear(function (err) {
-            checkOnError(res, err, {}, function () {
+            util.checkOnErrors(res, err, {}, function () {
                 _.each(req.body, function (event) {
                     event.date = new Date(event.date);
                     event.address = event.address || 'default address';
