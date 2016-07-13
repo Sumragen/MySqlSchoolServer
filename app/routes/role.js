@@ -3,19 +3,8 @@
  */
 var _ = require('lodash'),
     libs = process.cwd() + '/app/',
-    Role = require(libs + 'db/model/role'),
-    mysql = require(libs + 'db/mysql'),
+    util = require(libs + 'common/util'),
     log = require(libs + 'log');
-
-function checkOnError(res, err, item, next) {
-    if (err) {
-        res.status(err.code).send({message: err});
-    } else if (!item) {
-        res.status(404).send({message: 'Not found!'});
-    } else {
-        next();
-    }
-}
 
 module.exports = function (app) {
     //CRUD
@@ -24,11 +13,9 @@ module.exports = function (app) {
      */
     app.post('/api/role/add', function (req, res) {
         req.models.role.create(req.body, function (err, newRole) {
-            if (err) {
-                res.send(err);
-            } else {
+            util.checkOnErrors(res, err, newRole, function () {
                 res.status(200).json(newRole);
-            }
+            });
         });
     });
 
@@ -37,7 +24,7 @@ module.exports = function (app) {
      */
     app.get('/api/roles', function (req, res) {
         req.models.role.find({}, {autoFetchLimit: 2}, function (err, roles) {
-            checkOnError(res, err, roles, function () {
+            util.checkOnErrors(res, err, roles, function () {
                 res.status(200).json(roles);
             });
         });
@@ -45,7 +32,7 @@ module.exports = function (app) {
 
     app.get('/api/role/:id', function (req, res) {
         req.models.role.get(req.params.id, {autoFetchLimit: 1}, function (err, role) {
-            checkOnError(res, err, role, function () {
+            util.checkOnErrors(res, err, role, function () {
                 res.status(200).json(role);
             });
         });
@@ -56,17 +43,15 @@ module.exports = function (app) {
      */
     app.put('/api/role/:id', function (req, res) {
         req.models.role.get(req.params.id, function (err, role) {
-            checkOnError(res, err, role, function () {
+            util.checkOnErrors(res, err, role, function () {
                 role.description = req.body.description;
                 role.name = req.body.name;
                 role.permissions = req.body.permissions;
                 role.weight = req.body.weight;
-                role.save(function (err) {
-                    if (err) {
-                        res.status(err.code).send({message: err});
-                    } else {
-                        res.status(200).send(role);
-                    }
+                role.save(function (err, newRole) {
+                    util.checkOnErrors(res, err, newRole, function () {
+                        res.status(200).send(newRole);
+                    });
                 })
             })
         });
@@ -76,7 +61,7 @@ module.exports = function (app) {
      */
     app.delete('/api/role/:id', function (req, res) {
         req.models.role.find({id: req.params.id}).remove(function (err) {
-            checkOnError(res, err, {}, function () {
+            util.checkOnErrors(res, err, {}, function () {
                 res.status(200).send({id: req.params.id});
             })
         });
