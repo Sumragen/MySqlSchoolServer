@@ -25,12 +25,10 @@ module.exports = function (db) {
             unique: true
         },
         hashedPassword: {
-            type: 'text',
-            required: true
+            type: 'text'
         },
         salt: {
-            type: 'text',
-            required: true
+            type: 'text'
         },
         role_id: Number,
         created: Date
@@ -52,7 +50,7 @@ module.exports = function (db) {
             encryptPassword: function (password) {
                 return crypto.createHmac('sha1', this.salt).update(password).digest('hex');
             },
-            setPassword: function (password) {
+            generatePassword: function (password) {
                 this._plainPassword = password;
                 this.salt = crypto.randomBytes(32).toString('base64');
                 this.hashedPassword = this.encryptPassword(password);

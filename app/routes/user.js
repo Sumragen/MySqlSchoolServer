@@ -54,28 +54,31 @@ module.exports = function (app) {
      * Create
      */
     //register
-    app.post('/api/user/add', function (request, response) {
-        var user = new User(request.body);
-        Role.findOne({name: config.get('default:role')}, function (err, role) {
+    app.post('/api/user/add', function (req, res) {
+        req.models.role.find({name: config.get('default:role')}, function (err, roles) {
             if (err) {
-                response.status(404).send({message: err});
-            } else if (!role) {
-                response.status(500).send({message: 'Role not found (server side)'});
+                res.status(500).send({message: 'Role not found'});
             } else {
-                user.roles.push(role._id);
-                user.save(function (err) {
-                    if (!err) {
-                        log.info('User created!');
-                        response.status(200).json(user);
+                var user = {
+                    email: req.body.email,
+                    first_name: req.body.first_name,
+                    last_name: req.body.last_name,
+                    username: req.body.username,
+                    role_id: roles[0].id,
+                    created: new Date()
+                };
+                req.models.user.create(user, function (err, newUser) {
+                    if (err) {
+                        res.status(400).send(err);
                     } else {
-                        if (err.name == 'ValidationError') {
-                            response.status(400).send({message: 'Validation error'});
-                        } else if (err.code == 11000) {
-                            response.status(401).send({message: 'User with that data is exist'})
-                        } else {
-                            response.status(500).send({message: err});
-                        }
-                        log.error('Internal error(%d): %s', response.statusCode, err.message);
+                        newUser.generatePassword(req.body.password);
+                        newUser.save(function (err) {
+                            if (err) {
+                                res.status(500).send(err);
+                            } else {
+                                res.status(200).send(newUser);
+                            }
+                        });
                     }
                 });
             }
