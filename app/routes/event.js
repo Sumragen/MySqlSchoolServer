@@ -90,11 +90,9 @@ module.exports = function (app) {
      */
     app.delete('/api/event/:id', function (req, res) {
         req.models.event.find({id: req.params.id}).remove(function (err) {
-            if (err) {
-                res.status(500).send({message: err});
-            } else {
+            util.checkOnErrors(res, err, {}, function () {
                 res.status(200).send({id: req.params.id});
-            }
+            })
         });
-    })
+    });
 };

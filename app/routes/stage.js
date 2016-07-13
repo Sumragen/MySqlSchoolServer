@@ -3,20 +3,8 @@
  */
 var _ = require('lodash'),
     libs = process.cwd() + '/app/',
-    Stage = require(libs + 'db/model/stage'),
-    Teacher = require(libs + 'db/model/teacher'),
-    User = require(libs + 'db/model/user'),
+    util = require(libs + 'common/util'),
     log = require(libs + 'log');
-
-function checkOnError(res, err, item, next) {
-    if (err) {
-        res.status(err.code).send({message: err});
-    } else if (!item) {
-        res.status(404).send({message: 'Not found!'});
-    } else {
-        next();
-    }
-}
 
 module.exports = function (app) {
     //CRUD
@@ -30,9 +18,9 @@ module.exports = function (app) {
             formmaster_id: req.body.formMaster
         };
         req.models.stage.create(stage, function (err, newStage) {
-            checkOnError(res, err, newStage, function () {
+            util.checkOnErrors(res, err, newStage, function () {
                 req.models.stage.get(newStage.id, {autoFetch: true, autoFetchLimit: 3}, function (err, stage) {
-                    checkOnError(res, err, stage, function () {
+                    util.checkOnErrors(res, err, stage, function () {
                         res.status(200).send(createResponseBody(stage));
                     })
                 });
@@ -57,21 +45,19 @@ module.exports = function (app) {
 
     app.get('/api/stages', function (req, res) {
         req.models.stage.find({}, {autoFetch: true, autoFetchLimit: 2}, function (err, stages) {
-            if (err) {
-                res.status(500).send({message: err});
-            } else {
+            util.checkOnErrors(res, err, stages, function () {
                 var responseBody = [];
                 _.each(stages, function (stage) {
                     responseBody.push(createResponseBody(stage))
                 });
                 res.status(200).send(responseBody);
-            }
+            });
         });
     });
 
     app.get('/api/stage/:id', function (req, res) {
         req.models.stage.get(req.params.id, {autoFetch: true, autoFetchLimit: 3}, function (err, stage) {
-            checkOnError(req, err, stage, function () {
+            util.checkOnErrors(req, err, stage, function () {
                 res.status(200).json(stage);
             })
         });
@@ -86,9 +72,9 @@ module.exports = function (app) {
             stage.suffix = req.body.suffix;
             stage.formmaster_id = req.body.formMaster;
             stage.save(function (err, newStage) {
-                checkOnError(res, err, newStage, function () {
+                util.checkOnErrors(res, err, newStage, function () {
                     req.models.stage.get(req.params.id, {autoFetch: true, autoFetchLimit: 3}, function (err, stage) {
-                        checkOnError(res, err, stage, function () {
+                        util.checkOnErrors(res, err, stage, function () {
                             res.status(200).send(createResponseBody(stage));
                         });
                     });
@@ -100,15 +86,9 @@ module.exports = function (app) {
      * Delete
      */
     app.delete('/api/stage/:id', function (req, res) {
-        Stage.findById(req.params.id, function (err, stage) {
-            checkOnError(res, err, stage, function () {
-                stage.remove(function (err) {
-                    if (err) {
-                        res.status(err.code).send({message: err});
-                    } else {
-                        res.status(200).send({message: 'Stage deleted'});
-                    }
-                })
+        req.models.stage.find({id: req.params.id}).remove(function (err) {
+            util.checkOnErrors(res, err, {}, function () {
+                res.status(200).send({id: req.params.id});
             });
         });
     })

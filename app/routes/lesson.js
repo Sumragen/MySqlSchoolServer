@@ -195,7 +195,7 @@ module.exports = function (app) {
      * Delete
      */
     app.delete('/api/lesson/:id', function (req, res) {
-        req.models.lesson.get(req.params.id).remove(function (err) {
+        req.models.lesson.find({id:req.params.id}).remove(function (err) {
             util.checkOnErrors(res, err, {}, function () {
                 res.status(200).send({id: req.params.id});
             })
