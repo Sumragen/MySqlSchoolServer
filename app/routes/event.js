@@ -3,7 +3,7 @@
  */
 var _ = require('lodash'),
     libs = process.cwd() + '/app/',
-    util = require(libs+ 'common/util'),
+    util = require(libs + 'common/util'),
     log = require(libs + 'log');
 
 module.exports = function (app) {
@@ -77,7 +77,7 @@ module.exports = function (app) {
                     req.models.event.create(event, function (err) {
                         if (err) {
                             res.status(500).send({message: err});
-                        }else{
+                        } else {
                             res.status(200).send();
                         }
                     });

@@ -3,28 +3,8 @@
  */
 var _ = require('lodash'),
     libs = process.cwd() + '/app/',
-    Lesson = require(libs + 'db/model/lesson'),
-    Stage = require(libs + 'db/model/stage'),
+    util = require(libs + 'common/util'),
     log = require(libs + 'log');
-
-function checkOnError(res, err, item, next) {
-    if (err) {
-        res.status(err.code).send({message: err});
-    } else if (!item) {
-        res.status(404).send({message: 'Not found!'});
-    } else {
-        next();
-    }
-}
-
-function transformData(from, to) {
-    from.classroom = to.classroom;
-    from.stage = to.stage;
-    from.teacher = to.teacher;
-    from.subject = to.subject;
-    from.order = to.order;
-    from.day = to.day;
-}
 
 module.exports = function (app) {
     //CRUD
@@ -48,12 +28,12 @@ module.exports = function (app) {
                     return true;
                 })) {
                 req.models.lesson.create(lesson, function (err, newLesson) {
-                    checkOnError(res, err, newLesson, function () {
+                    util.checkOnErrors(res, err, newLesson, function () {
                         req.models.lesson.get(newLesson.id, {
                             autoFetch: true,
                             autoFetchLimit: 3
                         }, function (err, lesson) {
-                            checkOnError(res, err, lesson, function () {
+                            util.checkOnErrors(res, err, lesson, function () {
                                 res.status(200).send(lesson);
                             })
                         })
@@ -67,16 +47,16 @@ module.exports = function (app) {
      * Read
      */
     app.get('/api/lessons', function (req, res) {
-        Lesson.find(function (err, lessons) {
-            checkOnError(res, err, lessons, function () {
+        req.models.lesson.find({}, {autoFetch: true, autoFetchLimit: 3}, function (err, lessons) {
+            util.checkOnErrors(req, err, lessons, function () {
                 res.status(200).json(lessons);
-            });
+            })
         });
     });
 
     app.get('/api/lesson/:id', function (req, res) {
         Lesson.findById(req.params.id, function (err, lesson) {
-            checkOnError(res, err, lesson, function () {
+            util.checkOnErrors(res, err, lesson, function () {
                 res.status(200).json(lesson);
             });
         })
@@ -90,7 +70,7 @@ module.exports = function (app) {
                 res.status(500).send(err)
             } else {
                 req.models.stage.get(req.params.id, {autoFetch: true, autoFetchLimit: 3}, function (err, stage) {
-                    checkOnError(res, err, stage, function () {
+                    util.checkOnErrors(res, err, stage, function () {
                         if (!lessons || lessons.length <= 0) {
                             res.status(200).send({
                                 stage: stage
@@ -108,7 +88,7 @@ module.exports = function (app) {
     });
     app.get('/api/lesson/day/:day', function (req, res) {
         req.models.lesson.find({day: req.params.day}, {autoFetch: true, autoFetchLimit: 3}, function (err, lessons) {
-            checkOnError(res, err, lessons, function () {
+            util.checkOnErrors(res, err, lessons, function () {
                 res.status(200).send(lessons);
             });
         });
@@ -168,7 +148,7 @@ module.exports = function (app) {
                     return true;
                 })) {
                 lesson.save(function (err, newLesson) {
-                    checkOnError(res, err, newLesson, function () {
+                    util.checkOnErrors(res, err, newLesson, function () {
                         req.models.lesson.get(req.params.id, {
                             autoFetch: true,
                             autoFetchLimit: 3
@@ -221,7 +201,7 @@ module.exports = function (app) {
                                 lesson.day = days[newLesson.dow];
                                 lesson.order = newLesson.order;
                                 lesson.save(function (err) {
-                                    checkOnError(res, err, {}, function () {
+                                    util.checkOnErrors(res, err, {}, function () {
                                         res.status(200).send()
                                     });
                                 });
@@ -241,7 +221,7 @@ module.exports = function (app) {
      */
     app.delete('/api/lesson/:id', function (req, res) {
         Lesson.findById(req.params.id, function (err, lesson) {
-            checkOnError(res, err, lesson, function () {
+            util.checkOnErrors(res, err, lesson, function () {
                 lesson.remove(function (err) {
                     if (err) {
                         res.status(err.code).send({message: err});
@@ -256,9 +236,9 @@ module.exports = function (app) {
     //default schedule
     app.get('/api/schedule', function (req, res) {
         req.models.stage.find({}, function (err, stages) {
-            checkOnError(res, err, stages, function () {
+            util.checkOnErrors(res, err, stages, function () {
                 req.models.lesson.find({stage_id: stages[0].id}, {autoFetchLimit: 3}, function (err, lessons) {
-                    checkOnError(res, err, lessons, function () {
+                    util.checkOnErrors(res, err, lessons, function () {
                         res.status(200).send({stage: stages[0], lessons: lessons});
                     })
                 });
