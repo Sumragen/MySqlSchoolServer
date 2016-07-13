@@ -225,93 +225,19 @@ module.exports = function (app) {
                     });
                 }
             });
-            // User.findById(req.params.id, function (err, user) {
-            //     if (err || !user) {
-            //         res.status(!user ? 404 : 500).send({message: !user ? 'User not found' : err})
-            //     } else {
-            //         var reqBody = req.body;
-            //         user.first_name = reqBody.first_name;
-            //         user.last_name = reqBody.last_name;
-            //         user.username = reqBody.username;
-            //         user.email = reqBody.email;
-            //         Role.findById(reqBody.role, function (err, role) {
-            //             if (!err && role) {
-            //                 user.roles = [role];
-            //                 user.save(function (err, user) {
-            //                     if (!err) {
-            //                         req.headerSession.getSession()
-            //                             .then(function (session) {
-            //                                 // if (session.user._id == user.id) {
-            //                                 //     session.user = user;
-            //                                 // }
-            //                                 if (role.weight >= 50 && reqBody.subjects && reqBody.subjects.length > 0) {
-            //                                     Teacher.findOne({'user': reqBody.id}, function (err, teacher) {
-            //                                         if (err) {
-            //                                             res.status(500).send({message: err});
-            //                                         } else {
-            //                                             if (teacher) {
-            //                                                 teacher.subjects = reqBody.subjects;
-            //                                             } else {
-            //                                                 teacher = new Teacher({
-            //                                                     user: user._id,
-            //                                                     subjects: reqBody.subjects
-            //                                                 });
-            //                                             }
-            //                                             teacher.save(function (err) {
-            //                                                 if (err) {
-            //                                                     res.status(500).send({message: err});
-            //                                                 } else {
-            //                                                     res.status(200).json(user.getValues());
-            //                                                 }
-            //                                             });
-            //                                         }
-            //                                     })
-            //                                 } else {
-            //                                     Stage.find()
-            //                                         .populate('formMaster')
-            //                                         .exec(function (err, stages) {
-            //                                             if (_.every(stages, function (stage) {
-            //                                                     return stage.formMaster.user.id != user._id.id
-            //                                                 })) {
-            //                                                 Teacher.remove({'user': reqBody.id}, function (err) {
-            //                                                     if (err) {
-            //                                                         res.status(500).send({message: err});
-            //                                                     } else {
-            //                                                         res.status(200).json(user);
-            //                                                     }
-            //                                                 });
-            //                                             } else {
-            //                                                 res.status(400).send({message: 'That user is form master'});
-            //                                             }
-            //                                         });
-            //                                 }
-            //                             })
-            //                     } else {
-            //                         res.status(500).send({message: err});
-            //                     }
-            //                 })
-            //             }
-            //         });
-            //     }
-            // })
         }
     });
 
     /**
      * Delete
      */
-    app.delete('/api/user/:id', function (request, response) {
-        User.findById(request.params.id, function (err, user) {
-            if (err) response.status(err.code).send({message: err});
-            if (!user) response.status(404).send({message: 'User not found'});
-
-            user.remove(function (err) {
-                if (err) {
-                    response.status(err.code).send({message: err});
-                } else {
-                    response.status(200).send({message: 'User deleted'});
-                }
-            })
-        })
+    app.delete('/api/user/:id', function (req, res) {
+        req.models.user.get(req.params.id).remove(function (err) {
+            if (err) {
+                res.status(500).send(err);
+            } else {
+                res.status(200).send({id: req.params.id});
+            }
+        });
     });
 };
