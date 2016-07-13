@@ -97,31 +97,6 @@ module.exports = function (app) {
     /**
      * Update
      */
-    function update(res, lesson) {
-        lesson.save(function (err) {
-            if (err) {
-                res.status(500).send({message: err});
-            } else {
-                var options = {
-                    path: 'stage subject teacher'
-                };
-                Lesson.populate(lesson, options, function (err, lesson) {
-                    var options = {
-                        path: 'teacher.user',
-                        model: 'User'
-                    };
-                    Lesson.populate(lesson, options, function (err, lesson) {
-                        if (!err) {
-                            res.status(200).send(lesson);
-                        } else {
-                            res.status(500);
-                        }
-                    });
-                });
-            }
-        })
-    }
-
     app.put('/api/lesson/:id', function (req, res) {
         req.models.lesson.find({}, function (err, lessons) {
             var lesson = _.find(lessons, function (l) {
@@ -220,16 +195,10 @@ module.exports = function (app) {
      * Delete
      */
     app.delete('/api/lesson/:id', function (req, res) {
-        Lesson.findById(req.params.id, function (err, lesson) {
-            util.checkOnErrors(res, err, lesson, function () {
-                lesson.remove(function (err) {
-                    if (err) {
-                        res.status(err.code).send({message: err});
-                    } else {
-                        res.status(200).send({message: 'Lesson deleted'});
-                    }
-                })
-            });
+        req.models.lesson.get(req.params.id).remove(function (err) {
+            util.checkOnErrors(res, err, {}, function () {
+                res.status(200).send({id: req.params.id});
+            })
         });
     });
 
