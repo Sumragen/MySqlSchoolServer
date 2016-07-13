@@ -9,8 +9,7 @@ module.exports = function (db) {
         formmaster_id: Number
     }, {});
     Stage.hasOne('formMaster', db.models.teacher, {}, {
-        autoFetch: true,
-        autoFetchLimit: 2
+        autoFetch: false
     });
     return Stage;
 };

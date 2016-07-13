@@ -32,34 +32,35 @@ module.exports = function (app) {
      * Create
      */
     app.post('/api/lesson/add', function (req, res) {
-        Stage.findOne({stage: req.body.stage, suffix: req.body.suffix})
-            .exec(function (err, stage) {
-                if (err || !stage) {
-                    res.status(500).send({message: err || 'Stage not found'});
-                } else {
-                    req.body.stage = stage._id;
-                    var newLesson = new Lesson(req.body);
-                    Lesson.find()
-                        .exec(function (err, lessons) {
-                            if (_.every(lessons, function (existLesson) {
-                                    if (existLesson.day == newLesson.day
-                                        && existLesson.order == newLesson.order
-                                        && (existLesson.teacher.id == newLesson.teacher.id || existLesson.classroom == newLesson.classroom)
-                                        && existLesson._id.id != newLesson._id.id) {
-                                        if (existLesson.teacher.id == newLesson.teacher.id) {
-                                            res.status(400).send({message: 'That teacher is busy'})
-                                        } else {
-                                            res.status(400).send({message: 'That classroom is busy'})
-                                        }
-                                        return false
-                                    }
-                                    return true;
-                                })) {
-                                update(res, newLesson);
-                            }
-                        });
-                }
-            });
+        var lesson = req.body;
+        req.models.lesson.find(function (err, lessons) {
+            if (_.every(lessons, function (existLesson) {
+                    if (existLesson.day == lesson.day
+                        && existLesson.order == lesson.order
+                        && (existLesson.teacher_id == lesson.teacher_id || existLesson.classroom == lesson.classroom)) {
+                        if (existLesson.teacher_id == lesson.teacher_id) {
+                            res.status(400).send({message: 'That teacher is busy'});
+                        } else {
+                            res.status(400).send({message: 'That classroom is busy'});
+                        }
+                        return false;
+                    }
+                    return true;
+                })) {
+                req.models.lesson.create(lesson, function (err, newLesson) {
+                    checkOnError(res, err, newLesson, function () {
+                        req.models.lesson.get(newLesson.id, {
+                            autoFetch: true,
+                            autoFetchLimit: 3
+                        }, function (err, lesson) {
+                            checkOnError(res, err, lesson, function () {
+                                res.status(200).send(lesson);
+                            })
+                        })
+                    });
+                });
+            }
+        });
     });
 
     /**
@@ -81,55 +82,36 @@ module.exports = function (app) {
         })
     });
     app.get('/api/lesson/stage/:id', function (req, res) {
-        Lesson.find({stage: req.params.id})
-            .populate('stage subject teacher')
-            .exec(function (err, lessons) {
-                if (err) {
-                    res.status(500).send({message: err});
-                } else if (!lessons || lessons.length <= 0) {
-                    Stage.findById(req.params.id)
-                        .exec(function (err, stage) {
-                            if (err || !stage) {
-                                res.status(err ? 500 : 404).send({message: err || 'Stage not found'});
-                            } else {
-                                res.status(200).send({stage: stage});
-                            }
-                        });
-                } else {
-                    var options = {
-                        path: 'teacher.user',
-                        model: 'User'
-                    };
-                    Lesson.populate(lessons, options, function (err, lessons) {
-                        if (!err) {
-                            res.status(200).send({stage: lessons[0].stage, lessons: lessons});
+        req.models.lesson.find({stage_id: req.params.id}, {
+            autoFetch: true,
+            autoFetchLimit: 3
+        }, function (err, lessons) {
+            if (err) {
+                res.status(500).send(err)
+            } else {
+                req.models.stage.get(req.params.id, {autoFetch: true, autoFetchLimit: 3}, function (err, stage) {
+                    checkOnError(res, err, stage, function () {
+                        if (!lessons || lessons.length <= 0) {
+                            res.status(200).send({
+                                stage: stage
+                            })
                         } else {
-                            res.status(500);
+                            res.status(200).send({
+                                stage: stage,
+                                lessons: lessons
+                            })
                         }
-                    });
-                }
-            })
+                    })
+                });
+            }
+        });
     });
     app.get('/api/lesson/day/:day', function (req, res) {
-        Lesson.find({day: req.params.day})
-            .populate('stage subject teacher')
-            .exec(function (err, lessons) {
-                if (err || !lessons || lessons.length <= 0) {
-                    res.status(err ? 500 : 404).send({message: err || 'Lessons not found'});
-                } else {
-                    var options = {
-                        path: 'teacher.user',
-                        model: 'User'
-                    };
-                    Lesson.populate(lessons, options, function (err, lessons) {
-                        if (err || !lessons || lessons.length <= 0) {
-                            res.status(err ? 500 : 404).send({message: err || 'Lessons not found'});
-                        } else {
-                            res.status(200).send(lessons);
-                        }
-                    });
-                }
-            })
+        req.models.lesson.find({day: req.params.day}, {autoFetch: true, autoFetchLimit: 3}, function (err, lessons) {
+            checkOnError(res, err, lessons, function () {
+                res.status(200).send(lessons);
+            });
+        });
     });
 
     /**
@@ -161,30 +143,98 @@ module.exports = function (app) {
     }
 
     app.put('/api/lesson/:id', function (req, res) {
-        Lesson.find()
-            .exec(function (err, lessons) {
-                var newLesson = _.find(lessons, function (lesson) {
-                    return lesson._id == req.params.id;
-                });
-                transformData(newLesson, req.body);
-                //check: is teacher busy
-                if (_.every(lessons, function (existLesson) {
-                        if (existLesson.day == newLesson.day
-                            && existLesson.order == newLesson.order
-                            && (existLesson.teacher.id == newLesson.teacher.id || existLesson.classroom == newLesson.classroom)
-                            && existLesson._id.id != newLesson._id.id) {
-                            if (existLesson.teacher.id == newLesson.teacher.id) {
-                                res.status(400).send({message: 'That teacher is busy'})
-                            } else {
-                                res.status(400).send({message: 'That classroom is busy'})
-                            }
-                            return false
-                        }
-                        return true;
-                    })) {
-                    update(res, newLesson);
-                }
+        req.models.lesson.find({}, function (err, lessons) {
+            var lesson = _.find(lessons, function (l) {
+                return l.id == req.params.id;
             });
+            lesson.order = req.body.order;
+            lesson.classroom = req.body.classroom;
+            lesson.stage_id = req.body.stage_id;
+            lesson.subject_id = req.body.subject_id;
+            lesson.teacher_id = req.body.teacher_id;
+
+            if (_.every(lessons, function (existL) {
+                    if (existL.day == lesson.day
+                        && existL.order == lesson.order
+                        && (existL.teacher_id == lesson.teacher_id || existL.classroom == lesson.classroom)
+                        && existL.id != lesson.id) {
+                        if (existL.teacher_id == lesson.teacher_id) {
+                            res.status(400).send({message: 'That teacher is busy.'});
+                        } else {
+                            res.status(400).send({message: 'That classroom is busy.'});
+                        }
+                        return false;
+                    }
+                    return true;
+                })) {
+                lesson.save(function (err, newLesson) {
+                    checkOnError(res, err, newLesson, function () {
+                        req.models.lesson.get(req.params.id, {
+                            autoFetch: true,
+                            autoFetchLimit: 3
+                        }, function (err, flesson) {
+                            if (!err) {
+                                res.status(200).send(flesson)
+                            }
+                        });
+                    })
+                })
+            }
+        });
+    });
+    var days = {
+        1: 'Monday',
+        2: 'Tuesday',
+        3: 'Wednesday',
+        4: 'Thursday',
+        5: 'Friday',
+        6: 'Sunday',
+        7: 'Saturday'
+    };
+    app.put('/api/lessons', function (req, res) {
+        req.models.lesson.find({}, {}, function (err, lessons) {
+            var result = {isError: false, objects: []};
+            _.each(req.body.objects, function (newLesson) {
+                _.every(lessons, function (lesson) {
+                    if (lesson.id == newLesson.id) {
+                        _.every(lessons, function (checkLesson) {
+                            if (newLesson.id != checkLesson.id
+                                && lesson.teacher_id == checkLesson.teacher_id
+                                && lesson.order == checkLesson.order
+                                && days[newLesson.dow] == checkLesson.day) {
+                                result.isError = true;
+                                result.objects.push(lesson.id);
+                                return false;
+                            }
+                            return true;
+                        });
+                        return false;
+                    }
+                    return true;
+                })
+            });
+            if (!result.isError) {
+                req.models.lesson.find({stage_id: req.body.stage.id}, {}, function (err, lessons) {
+                    _.each(req.body.objects, function (newLesson) {
+                        _.every(lessons, function (lesson) {
+                            if (newLesson.id == lesson.id) {
+                                lesson.day = days[newLesson.dow];
+                                lesson.order = newLesson.order;
+                                lesson.save(function (err) {
+                                    checkOnError(res, err, {}, function () {
+                                        res.status(200).send()
+                                    });
+                                });
+                                return false;
+                            }
+                            return true;
+                        })
+                    })
+                })
+            } else {
+                res.status(200).send(result);
+            }
+        })
     });
     /**
      * Delete
@@ -205,33 +255,14 @@ module.exports = function (app) {
 
     //default schedule
     app.get('/api/schedule', function (req, res) {
-        Stage.findOne()
-            .exec(function (err, stage) {
-                if (err) {
-                    res.status(err ? 500 : 404).send({message: err || 'Stage not found'});
-                } else {
-                    Lesson.find({stage: stage._id})
-                        .populate('stage subject teacher')
-                        .exec(function (err, lessons) {
-                            if (err) {
-                                res.status(500).send({message: err});
-                            } else if (!lessons || lessons.length <= 0) {
-                                res.status(200).send({stage: stage});
-                            } else {
-                                var options = {
-                                    path: 'teacher.user',
-                                    model: 'User'
-                                };
-                                Lesson.populate(lessons, options, function (err, lessons) {
-                                    if (!err) {
-                                        res.status(200).send({stage: stage, lessons: lessons});
-                                    } else {
-                                        res.status(500);
-                                    }
-                                });
-                            }
-                        })
-                }
-            });
+        req.models.stage.find({}, function (err, stages) {
+            checkOnError(res, err, stages, function () {
+                req.models.lesson.find({stage_id: stages[0].id}, {autoFetchLimit: 3}, function (err, lessons) {
+                    checkOnError(res, err, lessons, function () {
+                        res.status(200).send({stage: stages[0], lessons: lessons});
+                    })
+                });
+            })
+        });
     });
 };

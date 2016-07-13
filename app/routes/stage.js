@@ -31,7 +31,7 @@ module.exports = function (app) {
         };
         req.models.stage.create(stage, function (err, newStage) {
             checkOnError(res, err, newStage, function () {
-                req.models.stage.get(newStage.id, {autoFetchLimit: 3}, function (err, stage) {
+                req.models.stage.get(newStage.id, {autoFetch: true, autoFetchLimit: 3}, function (err, stage) {
                     checkOnError(res, err, stage, function () {
                         res.status(200).send(createResponseBody(stage));
                     })
@@ -56,7 +56,7 @@ module.exports = function (app) {
     }
 
     app.get('/api/stages', function (req, res) {
-        req.models.stage.find({}, {autoFetchLimit: 2}, function (err, stages) {
+        req.models.stage.find({}, {autoFetch: true, autoFetchLimit: 2}, function (err, stages) {
             if (err) {
                 res.status(500).send({message: err});
             } else {
@@ -70,7 +70,7 @@ module.exports = function (app) {
     });
 
     app.get('/api/stage/:id', function (req, res) {
-        req.models.stage.get(req.params.id, {autoFetchLimit: 3}, function (err, stage) {
+        req.models.stage.get(req.params.id, {autoFetch: true, autoFetchLimit: 3}, function (err, stage) {
             checkOnError(req, err, stage, function () {
                 res.status(200).json(stage);
             })
@@ -84,10 +84,14 @@ module.exports = function (app) {
         req.models.stage.get(req.params.id, function (err, stage) {
             stage.stage = req.body.stage;
             stage.suffix = req.body.suffix;
-            stage.formMaster_id = req.body.formMaster;
+            stage.formmaster_id = req.body.formMaster;
             stage.save(function (err, newStage) {
                 checkOnError(res, err, newStage, function () {
-                    res.status(200).send(createResponseBody(newStage));
+                    req.models.stage.get(req.params.id, {autoFetch: true, autoFetchLimit: 3}, function (err, stage) {
+                        checkOnError(res, err, stage, function () {
+                            res.status(200).send(createResponseBody(stage));
+                        });
+                    });
                 })
             });
         });
