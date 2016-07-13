@@ -3,19 +3,8 @@
  */
 var _ = require('lodash'),
     libs = process.cwd() + '/app/',
-    Subject = require(libs + 'db/model/subject'),
-    Teacher = require(libs + 'db/model/teacher'),
+    util = require(libs + 'common/util'),
     log = require(libs + 'log');
-
-function checkOnError(res, err, item, next) {
-    if (err) {
-        res.status(err.code).send({message: err});
-    } else if (!item) {
-        res.status(404).send({message: 'Not found!'});
-    } else {
-        next();
-    }
-}
 
 module.exports = function (app) {
     //CRUD
@@ -23,38 +12,30 @@ module.exports = function (app) {
      * Create
      */
     app.post('/api/subject/add', function (req, res) {
-        var subject = new Subject(req.body);
-        subject.save(function (err) {
-            if (err) {
-                res.send({message: err});
-            } else {
-                log.info('Subject created');
-                res.status(200).json(subject);
-            }
-        })
+        res.status(500).send({message: 'In development.'})
     });
 
     /**
      * Read
      */
     app.get('/api/subjects', function (req, res) {
-        req.models.subject.all({}, {autoFetchLimit: 2}, function (err, subjects) {
-            checkOnError(req, err, subjects, function () {
+        req.models.subject.all({}, {autoFetch: true, autoFetchLimit: 2}, function (err, subjects) {
+            util.checkOnErrors(req, err, subjects, function () {
                 res.status(200).json(subjects);
             });
         });
     });
 
     app.get('/api/subject/:id', function (req, res) {
-        Subject.findById(req.params.id, function (err, subject) {
-            checkOnError(res, err, subject, function () {
+        req.models.subject.get(req.params.id, {autoFetch: true, autoFetchLimit: 3}, function (err, subject) {
+            util.checkOnErrors(res, err, subject, function () {
                 res.status(200).json(subject);
-            });
-        })
+            })
+        });
     });
     app.get('/api/subject/teacher/:id', function (req, res) {
         req.models.teacher.find({user_id: req.params.id}, {autoFetchLimit: 3}, function (err, teachers) {
-            checkOnError(req, err, {}, function () {
+            util.checkOnErrors(req, err, {}, function () {
                 res.status(200).json(teachers[0] ? teachers[0].subject : null);
             });
         });
@@ -64,33 +45,16 @@ module.exports = function (app) {
      * Update
      */
     app.put('/api/subject/:id', function (req, res) {
-        Subject.findById(req.params.id, function (err, subject) {
-            checkOnError(res, err, subject, function () {
-                subject = req.body;
-                subject.save(function (err) {
-                    if (err) {
-                        res.status(err.code).send({message: err});
-                    } else {
-                        res.status(200).send(subject);
-                    }
-                })
-            });
-        })
+        res.status(500).send({message: 'In development.'});
     });
     /**
      * Delete
      */
     app.delete('/api/subject/:id', function (req, res) {
-        Subject.findById(req.params.id, function (err, subject) {
-            checkOnError(res, err, subject, function () {
-                subject.remove(function (err) {
-                    if (err) {
-                        res.status(err.code).send({message: err});
-                    } else {
-                        res.status(200).send({message: 'Subject deleted'});
-                    }
-                })
-            });
+        req.models.subject.find({id: req.params.id}).remove(function (err) {
+            util.checkOnErrors(res, err, {}, function () {
+                res.status(200).send({id: req.params.id});
+            })
         });
     })
 };
