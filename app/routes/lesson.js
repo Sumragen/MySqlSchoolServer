@@ -48,18 +48,18 @@ module.exports = function (app) {
      */
     app.get('/api/lessons', function (req, res) {
         req.models.lesson.find({}, {autoFetch: true, autoFetchLimit: 3}, function (err, lessons) {
-            util.checkOnErrors(req, err, lessons, function () {
+            util.checkOnErrors(res, err, lessons, function () {
                 res.status(200).json(lessons);
             })
         });
     });
 
     app.get('/api/lesson/:id', function (req, res) {
-        Lesson.findById(req.params.id, function (err, lesson) {
+        req.models.lesson.get(req.params.id, {autoFetch: true, autoFetchLimit: 3}, function (err, lesson) {
             util.checkOnErrors(res, err, lesson, function () {
                 res.status(200).json(lesson);
-            });
-        })
+            })
+        });
     });
     app.get('/api/lesson/stage/:id', function (req, res) {
         req.models.lesson.find({stage_id: req.params.id}, {
