@@ -104,12 +104,12 @@ module.exports = function (app) {
     });
 
     // Get user by id
-    app.get('/api/user/:id', function (request, response) {
-        User.findById(request.params.id, function (err, user) {
-            if (!err) {
-                response.json(user);
+    app.get('/api/user/:id', function (req, res) {
+        req.models.user.get(req.params.id, function (err, user) {
+            if (err) {
+                res.status(500).send(err);
             } else {
-                response.status(500).send({message: err});
+                res.status(200).send(user);
             }
         });
     });
