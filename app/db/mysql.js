@@ -7,6 +7,7 @@ var orm = require('orm'),
 module.exports = function (app) {
     app.use(orm.express("mysql://root:root@localhost/SchoolMySqlDB", {
         define: function (db, models, next) {
+            models.permission = require('./model/permission')(db);
             models.role = require('./model/role')(db);
             models.user = require('./model/user')(db);
             models.teacher = require('./model/teacher')(db);

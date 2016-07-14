@@ -2,7 +2,8 @@
  * Created by trainee on 6/6/16.
  */
 
-function initRoutes(app){
+function initRoutes(app) {
+    require('./routes/permission')(app);
     require('./routes/event')(app);
     require('./routes/lesson')(app);
     require('./routes/role')(app);
