@@ -195,7 +195,7 @@ module.exports = function (app) {
      * Delete
      */
     app.delete('/api/lesson/:id', function (req, res) {
-        req.models.lesson.find({id:req.params.id}).remove(function (err) {
+        req.models.lesson.find({id: req.params.id}).remove(function (err) {
             util.checkOnErrors(res, err, {}, function () {
                 res.status(200).send({id: req.params.id});
             })
@@ -206,7 +206,10 @@ module.exports = function (app) {
     app.get('/api/schedule', function (req, res) {
         req.models.stage.find({}, function (err, stages) {
             util.checkOnErrors(res, err, stages, function () {
-                req.models.lesson.find({stage_id: stages[0].id}, {autoFetchLimit: 3}, function (err, lessons) {
+                req.models.lesson.find({stage_id: stages[0].id}, {
+                    autoFetch: true,
+                    autoFetchLimit: 3
+                }, function (err, lessons) {
                     util.checkOnErrors(res, err, lessons, function () {
                         res.status(200).send({stage: stages[0], lessons: lessons});
                     })

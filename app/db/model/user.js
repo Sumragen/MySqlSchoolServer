@@ -60,8 +60,6 @@ module.exports = function (db) {
             }
         }
     });
-    User.hasOne('role', require('./role')(db), {
-        autoFetch: true
-    });
+    User.hasOne('role', require('./role')(db), {});
     return User;
 };
