@@ -16,25 +16,32 @@ module.exports = function (app) {
      * Login
      */
     app.post('/api/login', function (req, res) {
-        req.models.user.one({username: req.body.username}, {autoFetch: true, autoFetchLimit: 2}, function (err, user) {
-            util.checkOnErrors(res, err, user, function () {
-                if (user.checkPassword(req.body.password)) {
-                    req.headerSession.getSession()
-                        .then(function (session) {
-                            session['user'] = user;
-                            session['user'].role.permissions = _.map(user.role.permissions, function (permission) {
-                                return permission.id;
-                            });
-                            res.status(200).json({
-                                currentUser: user,
-                                sessionID: req.headerSession.token
-                            });
-                        })
-                } else {
-                    res.status(404).send({message: 'User not found'});
-                }
-            });
-        });
+        req.models.user.one({
+                or: [{username: req.body.username}, {email: req.body.username}]
+            }, {
+                autoFetch: true,
+                autoFetchLimit: 2
+            }, function (err, user) {
+                util.checkOnErrors(res, err, user, function () {
+                    if (user.checkPassword(req.body.password)) {
+                        req.headerSession.getSession()
+                            .then(function (session) {
+                                session['user'] = user;
+                                session['user'].role.permissions = _.map(user.role.permissions, function (permission) {
+                                    return permission.id;
+                                });
+                                res.status(200).json({
+                                    currentUser: user,
+                                    sessionID: req.headerSession.token
+                                });
+                            })
+                    } else {
+                        res.status(404).send({message: 'User not found'});
+                    }
+                });
+            }
+        )
+        ;
     });
 
     /**
